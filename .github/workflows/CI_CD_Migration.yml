@@ -1,88 +1,62 @@
-name: CI/CD con Flyway (Demo -> Producción)
+name: CI/CD Pipeline with Flyway
 
 on:
   push:
     branches:
-      - main  # Ejecutar cuando haya un push a la rama principal
+      - main
 
 jobs:
-  validate-demo:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
+    # Paso 1: Verificar el código fuente
     - name: Checkout repository
       uses: actions/checkout@v2
 
-steps:
+    # Paso 2: Descargar Flyway
     - name: Descargar Flyway
       run: |
         curl -sSL https://repo.flywaydb.org/getflyway.sh -o getflyway.sh
         bash getflyway.sh
-        ls -alh
+        ls -alh  # Verificar los archivos descargados
         sudo mv flyway*/flyway /usr/local/bin
-        flyway -v
+        flyway -v  # Verificar la instalación
 
-    - name: Configuración de Flyway para Demo
+    # Paso 3: Configuración de la base de datos para la migración en Demo
+    - name: Configurar base de datos demo
       run: |
-        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" > flyway.conf
-        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
-        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
+        # Aquí puedes agregar la lógica para conectar a la base de datos demo
+        echo "Conectando a la base de datos de demo..."
+        # Agregar comandos Flyway para migrar la base de datos demo
+        flyway -url=jdbc:sqlserver://demo-server;databaseName=demoDB -user=admin -password=${{ secrets.DEMO_DB_PASSWORD }} migrate
 
-    - name: Ejecutar migraciones en Demo
+    # Paso 4: Verificación de migración en demo (solo si paso anterior es exitoso)
+    - name: Verificar migración de demo
       run: |
-        flyway -configFiles=flyway.conf migrate
-        # Mostrar el estado de las migraciones
-        flyway -configFiles=flyway.conf info
+        # Verificar el estado de las migraciones en la base de datos demo
+        flyway -url=jdbc:sqlserver://demo-server;databaseName=demoDB -user=admin -password=${{ secrets.DEMO_DB_PASSWORD }} info
+        echo "Migración de demo completada exitosamente"
 
-    - name: Validar que la migración en Demo fue exitosa
+    # Paso 5: Migrar la base de datos de producción si demo es exitoso
+    - name: Migrar base de datos producción
+      if: success()  # Solo se ejecuta si la migración de demo es exitosa
       run: |
-        if [ $? -ne 0 ]; then
-          echo "La migración en Demo falló. Abortando despliegue."
-          exit 1
-        fi
+        # Aquí puedes agregar la lógica para conectar a la base de datos de producción
+        echo "Conectando a la base de datos de producción..."
+        # Agregar comandos Flyway para migrar la base de datos de producción
+        flyway -url=jdbc:sqlserver://prod-server;databaseName=prodDB -user=admin -password=${{ secrets.PROD_DB_PASSWORD }} migrate
 
-  validate-prod:
-    runs-on: ubuntu-latest
-    needs: validate-demo  # Solo si el paso de Demo es exitoso
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Descargar e instalar Flyway
+    # Paso 6: Verificación de migración en producción (solo si paso anterior es exitoso)
+    - name: Verificar migración de producción
+      if: success()  # Solo se ejecuta si la migración de producción es exitosa
       run: |
-        # Descargar Flyway
-        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
-        # Mover Flyway a una ubicación accesible
-        sudo mv flyway*/flyway /usr/local/bin
-        # Verificar la instalación de Flyway
-        flyway -v
+        # Verificar el estado de las migraciones en la base de datos de producción
+        flyway -url=jdbc:sqlserver://prod-server;databaseName=prodDB -user=admin -password=${{ secrets.PROD_DB_PASSWORD }} info
+        echo "Migración de producción completada exitosamente"
 
-    - name: Configuración de Flyway para Producción
+    # Paso 7: Confirmar el push solo si todas las migraciones fueron exitosas
+    - name: Confirmar cambios
+      if: success()  # Solo se ejecuta si todas las migraciones fueron exitosas
       run: |
-        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" > flyway.conf
-        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
-        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
-
-    - name: Ejecutar migraciones en Producción
-      run: |
-        flyway -configFiles=flyway.conf migrate
-        # Mostrar el estado de las migraciones
-        flyway -configFiles=flyway.conf info
-
-    - name: Validar que la migración en Producción fue exitosa
-      run: |
-        if [ $? -ne 0 ]; then
-          echo "La migración en Producción falló. Abortando despliegue."
-          exit 1
-        fi
-
-  notify-errors:
-    runs-on: ubuntu-latest
-    if: failure()  # Este paso solo se ejecuta si alguno de los pasos anteriores falla
-
-    steps:
-    - name: Notificar falla de migración
-      run: |
-        echo "Se han producido errores en la migración. Revisa los logs para más detalles."
-        # Aquí puedes agregar cualquier lógica para enviar un correo, generar un reporte, etc.
+        echo "Las migraciones fueron exitosas, ahora se pueden confirmar los cambios."
