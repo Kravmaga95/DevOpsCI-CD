@@ -15,8 +15,12 @@ jobs:
 
     - name: Install Flyway
       run: |
+        # Descargar e instalar Flyway
         curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        # Asegurarnos de mover Flyway a una ruta accesible
         sudo mv flyway*/flyway /usr/local/bin
+        # Verificar la instalación
+        flyway -v
 
     - name: Set Flyway Config for Demo
       run: |
@@ -47,8 +51,12 @@ jobs:
 
     - name: Install Flyway
       run: |
+        # Descargar e instalar Flyway
         curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        # Asegurarnos de mover Flyway a una ruta accesible
         sudo mv flyway*/flyway /usr/local/bin
+        # Verificar la instalación
+        flyway -v
 
     - name: Set Flyway Config for Production
       run: |
