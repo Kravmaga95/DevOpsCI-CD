@@ -15,11 +15,16 @@ jobs:
       uses: actions/checkout@v2
 
     # Paso 2: Instalar Flyway usando apt
-    - name: Instalar Flyway
+    - name: Instalar Flyway desde repositorio oficial
       run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget -qO - https://packages.flywaydb.org/flyway.key | sudo apt-key add -
+        sudo add-apt-repository "deb https://packages.flywaydb.org/deb stable main"
         sudo apt-get update
         sudo apt-get install -y flyway
         flyway -v  # Verificar la instalación
+
 
     # Paso 3: Configuración de la base de datos para la migración en Demo
     - name: Configurar base de datos demo
