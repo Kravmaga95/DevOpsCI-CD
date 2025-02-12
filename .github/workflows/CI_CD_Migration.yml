@@ -13,15 +13,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Descargar e instalar Flyway
+steps:
+    - name: Descargar Flyway
       run: |
-        # Descargar Flyway (sin problemas con el script)
-        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
-        # Verificar si Flyway se descargó correctamente
+        curl -sSL https://repo.flywaydb.org/getflyway.sh -o getflyway.sh
+        bash getflyway.sh
         ls -alh
-        # Mover Flyway a una ubicación accesible
         sudo mv flyway*/flyway /usr/local/bin
-        # Verificar la instalación de Flyway
         flyway -v
 
     - name: Configuración de Flyway para Demo
