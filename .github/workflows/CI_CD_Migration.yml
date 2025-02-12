@@ -13,20 +13,31 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Run Flyway Migrations on Demo
-      uses: flyway/flyway-migration@v2.1.0
-      with:
-        url: jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}
-        user: ${{ secrets.DB_USER }}
-        password: ${{ secrets.DB_PASSWORD }}
-        locations: filesystem:sql/migrations
-        validateOnMigrate: true  # Validar antes de ejecutar migraciones
-        migrate: true  # Ejecutar las migraciones
+    - name: Descargar e instalar Flyway
+      run: |
+        # Descargar Flyway
+        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        # Mover Flyway a una ubicación accesible
+        sudo mv flyway*/flyway /usr/local/bin
+        # Verificar la instalación de Flyway
+        flyway -v
 
-    - name: Check Flyway Migration Success on Demo
+    - name: Configuración de Flyway para Demo
+      run: |
+        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
+        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
+        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
+
+    - name: Ejecutar migraciones en Demo
+      run: |
+        flyway -configFiles=flyway.conf migrate
+        # Mostrar el estado de las migraciones
+        flyway -configFiles=flyway.conf info
+
+    - name: Validar que la migración en Demo fue exitosa
       run: |
         if [ $? -ne 0 ]; then
-          echo "Migración en Demo fallida. Abortando despliegue."
+          echo "La migración en Demo falló. Abortando despliegue."
           exit 1
         fi
 
@@ -38,20 +49,31 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Run Flyway Migrations on Production
-      uses: flyway/flyway-migration@v2.1.0
-      with:
-        url: jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}
-        user: ${{ secrets.DB_USER }}
-        password: ${{ secrets.DB_PASSWORD }}
-        locations: filesystem:sql/migrations
-        validateOnMigrate: true  # Validar antes de ejecutar migraciones
-        migrate: true  # Ejecutar las migraciones
+    - name: Descargar e instalar Flyway
+      run: |
+        # Descargar Flyway
+        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        # Mover Flyway a una ubicación accesible
+        sudo mv flyway*/flyway /usr/local/bin
+        # Verificar la instalación de Flyway
+        flyway -v
 
-    - name: Check Flyway Migration Success on Production
+    - name: Configuración de Flyway para Producción
+      run: |
+        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
+        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
+        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
+
+    - name: Ejecutar migraciones en Producción
+      run: |
+        flyway -configFiles=flyway.conf migrate
+        # Mostrar el estado de las migraciones
+        flyway -configFiles=flyway.conf info
+
+    - name: Validar que la migración en Producción fue exitosa
       run: |
         if [ $? -ne 0 ]; then
-          echo "Migración en Producción fallida. Abortando despliegue."
+          echo "La migración en Producción falló. Abortando despliegue."
           exit 1
         fi
 
@@ -60,7 +82,7 @@ jobs:
     if: failure()  # Este paso solo se ejecuta si alguno de los pasos anteriores falla
 
     steps:
-    - name: Notify Migration Failure
+    - name: Notificar falla de migración
       run: |
-        echo "Se han producido errores en la migración. Revisa los logs para detalles."
+        echo "Se han producido errores en la migración. Revisa los logs para más detalles."
         # Aquí puedes agregar cualquier lógica para enviar un correo, generar un reporte, etc.
