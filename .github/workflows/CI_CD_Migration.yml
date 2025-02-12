@@ -1,0 +1,80 @@
+name: CI/CD con Flyway (Demo -> Producción)
+
+on:
+  push:
+    branches:
+      - main  # Se ejecuta cuando se hace un push a la rama principal
+
+jobs:
+  validate-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Flyway
+      run: |
+        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        sudo mv flyway*/flyway /usr/local/bin
+
+    - name: Set Flyway Config for Demo
+      run: |
+        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
+        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
+        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
+
+    - name: Run Flyway Migrations on Demo
+      run: |
+        flyway -configFiles=flyway.conf migrate
+        # Guardar el resultado de las migraciones
+        flyway -configFiles=flyway.conf info
+
+    - name: Check Flyway Migration Success on Demo
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "Migración en Demo fallida. Abortando despliegue."
+          exit 1
+        fi
+
+  validate-prod:
+    runs-on: ubuntu-latest
+    needs: validate-demo  # Este paso solo se ejecuta si el paso anterior fue exitoso
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Flyway
+      run: |
+        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
+        sudo mv flyway*/flyway /usr/local/bin
+
+    - name: Set Flyway Config for Production
+      run: |
+        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
+        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
+        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
+
+    - name: Run Flyway Migrations on Production
+      run: |
+        flyway -configFiles=flyway.conf migrate
+        # Guardar el resultado de las migraciones
+        flyway -configFiles=flyway.conf info
+
+    - name: Check Flyway Migration Success on Production
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "Migración en Producción fallida. Abortando despliegue."
+          exit 1
+        fi
+
+  notify-errors:
+    runs-on: ubuntu-latest
+    if: failure()  # Este paso solo se ejecuta si alguno de los pasos anteriores falla
+
+    steps:
+    - name: Notify Migration Failure
+      run: |
+        echo "Se han producido errores en la migración. Revisa los logs para detalles."
+        # Aquí puedes agregar cualquier lógica para enviar un correo, generar un reporte, etc.
