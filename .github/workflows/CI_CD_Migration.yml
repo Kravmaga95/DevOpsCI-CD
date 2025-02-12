@@ -14,13 +14,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Paso 2: Descargar Flyway
-    - name: Descargar Flyway
+    # Paso 2: Instalar Flyway usando apt
+    - name: Instalar Flyway
       run: |
-        curl -sSL https://repo.flywaydb.org/getflyway.sh -o getflyway.sh
-        bash getflyway.sh
-        ls -alh  # Verificar los archivos descargados
-        sudo mv flyway*/flyway /usr/local/bin
+        sudo apt-get update
+        sudo apt-get install -y flyway
         flyway -v  # Verificar la instalación
 
     # Paso 3: Configuración de la base de datos para la migración en Demo
