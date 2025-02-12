@@ -23,6 +23,7 @@ jobs:
         echo "/opt/flyway" >> $GITHUB_PATH
         chmod +x /opt/flyway/flyway
         /opt/flyway/flyway -v  # Verifica que Flyway está instalado
+
     # Paso 3: Validar la existencia del directorio migrations
     - name: Verificar directorio de migraciones
       run: |
@@ -31,8 +32,8 @@ jobs:
     # Paso 4: Ejecutar Flyway Migration en base de datos Demo
     - name: Migrar base de datos Demo
       run: |
-        flyway -url="jdbc:sqlserver://1IHTPORTHV4H,1433;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
-               -user="admin" \
+        flyway -url="jdbc:sqlserver://1IHTPORTHV4H:1433;authentication=sqlPassword;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
+               -user="sa" \
                -password="${{ secrets.DEMO_DB_PASSWORD }}" \
                -locations="filesystem:migrations" \
                migrate
@@ -40,8 +41,8 @@ jobs:
     # Paso 5: Verificar migración en demo
     - name: Verificar migración en Demo
       run: |
-        flyway -url="jdbc:sqlserver://1IHTPORTHV4H,1433;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
-               -user="admin" \
+        flyway -url="jdbc:sqlserver://1IHTPORTHV4H:1433;authentication=sqlPassword;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
+               -user="sa" \
                -password="${{ secrets.DEMO_DB_PASSWORD }}" \
                info
         echo "Migración en Demo completada exitosamente"
@@ -50,7 +51,7 @@ jobs:
     - name: Migrar base de datos Producción
       if: success()
       run: |
-        flyway -url="jdbc:sqlserver://prod-server,1433;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
+        flyway -url="jdbc:sqlserver://prod-server:1433;authentication=sqlPassword;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
                -password="${{ secrets.PROD_DB_PASSWORD }}" \
                -locations="filesystem:migrations" \
@@ -60,7 +61,7 @@ jobs:
     - name: Verificar migración en Producción
       if: success()
       run: |
-        flyway -url="jdbc:sqlserver://prod-server,1433;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
+        flyway -url="jdbc:sqlserver://prod-server:1433;authentication=sqlPassword;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
                -password="${{ secrets.PROD_DB_PASSWORD }}" \
                info
