@@ -16,7 +16,7 @@ jobs:
 
     # Paso 2: Usar la acción Flyway Migration
     - name: Ejecutar Flyway Migration en base de datos Demo
-      uses: flyway/flyway-migration-action@v6  # Esta es la versión estable actual de Flyway
+      uses: flyway/flyway-migration-action@latest  # Usar la versión más reciente disponible
       with:
         url: 'jdbc:sqlserver://demo-server;databaseName=demoDB'
         user: 'admin'
@@ -32,7 +32,7 @@ jobs:
     # Paso 4: Migrar la base de datos de producción si demo es exitoso
     - name: Ejecutar Flyway Migration en base de datos Producción
       if: success()  # Solo se ejecuta si la migración de demo es exitosa
-      uses: flyway/flyway-migration-action@v6  # Usamos la versión estable
+      uses: flyway/flyway-migration-action@latest  # Usar la versión más reciente disponible
       with:
         url: 'jdbc:sqlserver://prod-server;databaseName=prodDB'
         user: 'admin'
