@@ -14,28 +14,30 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Paso 2: Instalar Flyway usando apt
-   - name: Descargar y configurar Flyway manualmente
+    # Paso 2: Descargar y configurar Flyway manualmente
+    - name: Descargar y configurar Flyway manualmente
       run: |
         # Descargar el archivo tar.gz de Flyway desde la URL correcta
         curl -sSL https://github.com/flyway/flyway/releases/download/9.0.0/flyway-9.0.0-linux-x64.tar.gz -o flyway.tar.gz
-        # Verificar si el archivo es correcto
+        
+        # Verificar si el archivo descargado es válido
         file flyway.tar.gz
+        
         # Extraer el archivo tar.gz
         tar -xzf flyway.tar.gz
-        # Mover el ejecutable de Flyway a /usr/local/bin para hacer que sea accesible globalmente
+        
+        # Mover el ejecutable de Flyway a /usr/local/bin para hacerlo accesible globalmente
         sudo mv flyway-*/flyway /usr/local/bin/
+        
         # Verificar la instalación de Flyway
         flyway -v
-
-
-
 
     # Paso 3: Configuración de la base de datos para la migración en Demo
     - name: Configurar base de datos demo
       run: |
         # Aquí puedes agregar la lógica para conectar a la base de datos demo
         echo "Conectando a la base de datos de demo..."
+        
         # Agregar comandos Flyway para migrar la base de datos demo
         flyway -url=jdbc:sqlserver://demo-server;databaseName=demoDB -user=admin -password=${{ secrets.DEMO_DB_PASSWORD }} migrate
 
@@ -52,6 +54,7 @@ jobs:
       run: |
         # Aquí puedes agregar la lógica para conectar a la base de datos de producción
         echo "Conectando a la base de datos de producción..."
+        
         # Agregar comandos Flyway para migrar la base de datos de producción
         flyway -url=jdbc:sqlserver://prod-server;databaseName=prodDB -user=admin -password=${{ secrets.PROD_DB_PASSWORD }} migrate
 
