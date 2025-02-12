@@ -15,14 +15,17 @@ jobs:
       uses: actions/checkout@v2
 
     # Paso 2: Instalar Flyway usando apt
-    - name: Descargar e instalar Flyway manualmente
+    - name: Descargar y configurar Flyway manualmente
       run: |
-        # Descargar el script de Flyway
-        curl -sSL https://repo.flywaydb.org/getflyway.sh -o getflyway.sh
-        # Ejecutar el script
-        bash getflyway.sh
+        # Descargar el archivo tar.gz de Flyway
+        curl -sSL https://repo.flywaydb.org/flyway/flyway-9.15.0-linux-x64.tar.gz -o flyway.tar.gz
+        # Extraer el archivo
+        tar -xzf flyway.tar.gz
+        # Mover el ejecutable a /usr/local/bin para que sea accesible globalmente
+        sudo mv flyway-*/flyway /usr/local/bin/
         # Verificar la instalación
         flyway -v
+
 
 
 
