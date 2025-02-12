@@ -34,7 +34,7 @@ jobs:
       run: |
         flyway -url="jdbc:sqlserver://1IHTPORTHV4H:1433;authentication=sqlPassword;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
                -user="sa" \
-               -password="${{ secrets.DEMO_DB_PASSWORD }}" \
+               -password="Colcan" \
                -locations="filesystem:migrations" \
                migrate
 
@@ -43,7 +43,7 @@ jobs:
       run: |
         flyway -url="jdbc:sqlserver://1IHTPORTHV4H:1433;authentication=sqlPassword;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
                -user="sa" \
-               -password="${{ secrets.DEMO_DB_PASSWORD }}" \
+               -password="Colcan" \
                info
         echo "Migración en Demo completada exitosamente"
 
