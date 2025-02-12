@@ -14,49 +14,59 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Paso 2: Instalar Flyway en el runner
+    # Paso 2: Instalar Flyway manualmente con la última versión
     - name: Instalar Flyway
       run: |
-        wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/10.6.0/flyway-commandline-10.6.0-linux-x64.tar.gz | tar xvz
-        sudo mv flyway-10.6.0 /opt/flyway
-        sudo ln -s /opt/flyway/flyway /usr/local/bin/flyway
-        flyway -v  # Verificar instalación
+        curl -sSL https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/11.3.1/flyway-commandline-11.3.1-linux-x64.tar.gz -o flyway.tar.gz
+        tar -xzf flyway.tar.gz
+        sudo mv flyway-*/flyway /usr/local/bin/
+        flyway -v
 
-    # Paso 3: Ejecutar migración en base de datos Demo
-    - name: Ejecutar migración en base de datos Demo
+    # Paso 3: Validar la existencia del directorio migrations
+    - name: Verificar directorio de migraciones
       run: |
-        flyway -url="jdbc:sqlserver://demo-server;databaseName=demoDB" \
+        if [ ! -d "migrations" ]; then echo "ERROR: Directorio migrations no encontrado"; exit 1; fi
+
+    # Paso 4: Ejecutar Flyway Migration en base de datos Demo
+    - name: Migrar base de datos Demo
+      run: |
+        flyway -url="jdbc:sqlserver://1IHTPORTHV4H,1433;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
                -password="${{ secrets.DEMO_DB_PASSWORD }}" \
-               -locations="filesystem:./migrations" migrate
+               -locations="filesystem:migrations" \
+               migrate
 
-    # Paso 4: Verificar migración en Demo
+    # Paso 5: Verificar migración en demo
     - name: Verificar migración en Demo
       run: |
-        flyway -url="jdbc:sqlserver://demo-server;databaseName=demoDB" \
+        flyway -url="jdbc:sqlserver://1IHTPORTHV4H,1433;databaseName=prueba;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
-               -password="${{ secrets.DEMO_DB_PASSWORD }}" info
-        echo "Migración de Demo completada exitosamente"
+               -password="${{ secrets.DEMO_DB_PASSWORD }}" \
+               info
+        echo "Migración en Demo completada exitosamente"
 
-    # Paso 5: Ejecutar migración en base de datos Producción (si la de demo es exitosa)
-    - name: Ejecutar migración en base de datos Producción
+    # Paso 6: Migrar la base de datos de Producción si Demo fue exitoso
+    - name: Migrar base de datos Producción
       if: success()
       run: |
-        flyway -url="jdbc:sqlserver://prod-server;databaseName=prodDB" \
+        flyway -url="jdbc:sqlserver://prod-server,1433;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
                -password="${{ secrets.PROD_DB_PASSWORD }}" \
-               -locations="filesystem:./migrations" migrate
+               -locations="filesystem:migrations" \
+               migrate
 
-    # Paso 6: Verificar migración en Producción
+    # Paso 7: Verificar migración en producción
     - name: Verificar migración en Producción
       if: success()
       run: |
-        flyway -url="jdbc:sqlserver://prod-server;databaseName=prodDB" \
+        flyway -url="jdbc:sqlserver://prod-server,1433;databaseName=prodDB;encrypt=true;trustServerCertificate=true" \
                -user="admin" \
-               -password="${{ secrets.PROD_DB_PASSWORD }}" info
-        echo "Migración de Producción completada exitosamente"
+               -password="${{ secrets.PROD_DB_PASSWORD }}" \
+               info
+        echo "Migración en Producción completada exitosamente"
 
-    # Paso 7: Confirmar los cambios
+    # Paso 8: Confirmar cambios si todas las migraciones fueron exitosas
     - name: Confirmar cambios
       if: success()
-      run: echo "Las migraciones fueron exitosas, ahora se pueden confirmar los cambios."
+      run: |
+        echo "Todas las migraciones fueron exitosas. Listo para confirmar cambios."
