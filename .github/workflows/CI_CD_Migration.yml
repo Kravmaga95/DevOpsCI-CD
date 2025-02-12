@@ -13,26 +13,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install Flyway
-      run: |
-        # Descargar e instalar Flyway
-        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
-        # Asegurarnos de mover Flyway a una ruta accesible
-        sudo mv flyway*/flyway /usr/local/bin
-        # Verificar la instalación
-        flyway -v
-
-    - name: Set Flyway Config for Demo
-      run: |
-        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
-        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
-        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
-
     - name: Run Flyway Migrations on Demo
-      run: |
-        flyway -configFiles=flyway.conf migrate
-        # Guardar el resultado de las migraciones
-        flyway -configFiles=flyway.conf info
+      uses: flyway/flyway-migration@v2.1.0
+      with:
+        url: jdbc:sqlserver://${{ secrets.DB_HOST_DEMO }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}
+        user: ${{ secrets.DB_USER }}
+        password: ${{ secrets.DB_PASSWORD }}
+        locations: filesystem:sql/migrations
+        validateOnMigrate: true  # Validar antes de ejecutar migraciones
+        migrate: true  # Ejecutar las migraciones
 
     - name: Check Flyway Migration Success on Demo
       run: |
@@ -49,26 +38,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install Flyway
-      run: |
-        # Descargar e instalar Flyway
-        curl -sSL https://repo.flywaydb.org/getflyway.sh | bash
-        # Asegurarnos de mover Flyway a una ruta accesible
-        sudo mv flyway*/flyway /usr/local/bin
-        # Verificar la instalación
-        flyway -v
-
-    - name: Set Flyway Config for Production
-      run: |
-        echo "flyway.url=jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}" >> flyway.conf
-        echo "flyway.user=${{ secrets.DB_USER }}" >> flyway.conf
-        echo "flyway.password=${{ secrets.DB_PASSWORD }}" >> flyway.conf
-
     - name: Run Flyway Migrations on Production
-      run: |
-        flyway -configFiles=flyway.conf migrate
-        # Guardar el resultado de las migraciones
-        flyway -configFiles=flyway.conf info
+      uses: flyway/flyway-migration@v2.1.0
+      with:
+        url: jdbc:sqlserver://${{ secrets.DB_HOST_PROD }}:${{ secrets.DB_PORT }};databaseName=${{ secrets.DB_NAME }}
+        user: ${{ secrets.DB_USER }}
+        password: ${{ secrets.DB_PASSWORD }}
+        locations: filesystem:sql/migrations
+        validateOnMigrate: true  # Validar antes de ejecutar migraciones
+        migrate: true  # Ejecutar las migraciones
 
     - name: Check Flyway Migration Success on Production
       run: |
