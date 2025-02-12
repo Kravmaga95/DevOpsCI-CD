@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-   deploy:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
 
     steps:
     # Paso 1: Verificar el código fuente
