@@ -14,40 +14,49 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Paso 2: Usar la acción Flyway Migration
-    - name: Ejecutar Flyway Migration en base de datos Demo
-      uses: flyway/flyway-migration-action@latest  # Usar la versión más reciente disponible
-      with:
-        url: 'jdbc:sqlserver://demo-server;databaseName=demoDB'
-        user: 'admin'
-        password: ${{ secrets.DEMO_DB_PASSWORD }}
-        locations: 'filesystem:/migrations'  # Asegúrate de que la carpeta "migrations" esté en tu repo
-
-    # Paso 3: Verificación de migración en demo (solo si paso anterior es exitoso)
-    - name: Verificar migración en demo
+    # Paso 2: Instalar Flyway en el runner
+    - name: Instalar Flyway
       run: |
-        flyway -url=jdbc:sqlserver://demo-server;databaseName=demoDB -user=admin -password=${{ secrets.DEMO_DB_PASSWORD }} info
-        echo "Migración de demo completada exitosamente"
+        wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/10.6.0/flyway-commandline-10.6.0-linux-x64.tar.gz | tar xvz
+        sudo mv flyway-10.6.0 /opt/flyway
+        sudo ln -s /opt/flyway/flyway /usr/local/bin/flyway
+        flyway -v  # Verificar instalación
 
-    # Paso 4: Migrar la base de datos de producción si demo es exitoso
-    - name: Ejecutar Flyway Migration en base de datos Producción
-      if: success()  # Solo se ejecuta si la migración de demo es exitosa
-      uses: flyway/flyway-migration-action@latest  # Usar la versión más reciente disponible
-      with:
-        url: 'jdbc:sqlserver://prod-server;databaseName=prodDB'
-        user: 'admin'
-        password: ${{ secrets.PROD_DB_PASSWORD }}
-        locations: 'filesystem:/migrations'  # Asegúrate de que la carpeta "migrations" esté en tu repo
-
-    # Paso 5: Verificación de migración en producción (solo si paso anterior es exitoso)
-    - name: Verificar migración de producción
-      if: success()  # Solo se ejecuta si la migración de producción es exitosa
+    # Paso 3: Ejecutar migración en base de datos Demo
+    - name: Ejecutar migración en base de datos Demo
       run: |
-        flyway -url=jdbc:sqlserver://prod-server;databaseName=prodDB -user=admin -password=${{ secrets.PROD_DB_PASSWORD }} info
-        echo "Migración de producción completada exitosamente"
+        flyway -url="jdbc:sqlserver://demo-server;databaseName=demoDB" \
+               -user="admin" \
+               -password="${{ secrets.DEMO_DB_PASSWORD }}" \
+               -locations="filesystem:./migrations" migrate
 
-    # Paso 6: Confirmar los cambios solo si todas las migraciones fueron exitosas
+    # Paso 4: Verificar migración en Demo
+    - name: Verificar migración en Demo
+      run: |
+        flyway -url="jdbc:sqlserver://demo-server;databaseName=demoDB" \
+               -user="admin" \
+               -password="${{ secrets.DEMO_DB_PASSWORD }}" info
+        echo "Migración de Demo completada exitosamente"
+
+    # Paso 5: Ejecutar migración en base de datos Producción (si la de demo es exitosa)
+    - name: Ejecutar migración en base de datos Producción
+      if: success()
+      run: |
+        flyway -url="jdbc:sqlserver://prod-server;databaseName=prodDB" \
+               -user="admin" \
+               -password="${{ secrets.PROD_DB_PASSWORD }}" \
+               -locations="filesystem:./migrations" migrate
+
+    # Paso 6: Verificar migración en Producción
+    - name: Verificar migración en Producción
+      if: success()
+      run: |
+        flyway -url="jdbc:sqlserver://prod-server;databaseName=prodDB" \
+               -user="admin" \
+               -password="${{ secrets.PROD_DB_PASSWORD }}" info
+        echo "Migración de Producción completada exitosamente"
+
+    # Paso 7: Confirmar los cambios
     - name: Confirmar cambios
-      if: success()  # Solo se ejecuta si todas las migraciones fueron exitosas
-      run: |
-        echo "Las migraciones fueron exitosas, ahora se pueden confirmar los cambios."
+      if: success()
+      run: echo "Las migraciones fueron exitosas, ahora se pueden confirmar los cambios."
